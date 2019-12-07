@@ -1,0 +1,114 @@
+#define MaxInt 0x7ffffff		//定义最大值为‭134217727‬，int型最大值为‭2147483647‬，不能定义为这个值，因为第53行有相加的指令，会使数值溢出为负
+#include<iostream>
+using namespace std;
+
+int LocateVex(char* p, char v1, int vexnum) {		//查找节点的在一维数组存放的下标
+	for (int i = 0; i < vexnum; i++)
+		if (p[i] == v1)return i;
+}
+
+void CreateUDN(char* p, int** q, int vexnum, int arcnum) {		//将无向图以邻接矩阵的形式存储
+	int w, i, j;
+	char v1, v2;
+	cout << "输入节点的名称" << endl;
+	for (int t = 0; t < vexnum; t++)
+		cin >> p[t];
+	cout << "输入头结点和尾结点以及权值：" << endl;
+	for (int k = 0; k < arcnum; k++)
+	{
+		cin >> v1 >> v2 >> w;
+		i = LocateVex(p, v1, vexnum);
+		j = LocateVex(p, v2, vexnum);
+		q[i][j] = w;
+		q[j][i] = q[i][j];				//去掉这一句，则变成有向图的创建
+	}
+}
+
+void shortPath(char* p, int** q, int* path, int vexnum, char v, int* d) {		
+	int n = vexnum, t;
+	bool* s = new bool[vexnum];
+	int j = LocateVex(p, v, n);
+	for (int i = 0; i < n; i++)
+	{
+		s[i] = false;
+		d[i] = q[j][i];
+		if (d[i] < MaxInt)path[i] = j;
+		else path[i] = -1;
+	}
+	s[j] = true;
+	d[j] = 0;
+	for (int i = 1; i < n; i++)
+	{
+		int min = MaxInt;
+		for (int w = 0; w < n; w++)
+		{
+			if (!s[w] && d[w] < min)
+			{
+				t = w;
+				min = d[w];
+			}
+		}
+		s[t] = true;
+		for (int w = 0; w < n; w++)
+			if (!s[w] && (d[t] + q[t][w] < d[w]))
+			{
+				d[w] = d[t] + q[t][w];
+				path[w] = t;
+			}
+	}
+}
+
+void print(char* p, int** q, int* path, int* d, int vexnum, char v) {
+	int* st = new int[vexnum];
+	int i, k, j, pre, top = -1;
+	k = LocateVex(p, v, vexnum);
+	for (i = 0; i < vexnum; i++)
+	{
+		printf("\nDistanced:%7d\tPath:\t", d[i]);
+		st[++top] = i;
+		pre = path[i];
+		while (pre != -1)
+		{
+			st[++top] = pre;
+			pre = path[pre];
+		}
+		if (i == k && k != 0)top--;
+		if (i == 0 && k > 0)
+		{
+			while (top >= 0)
+			{
+				j = st[top--];
+				cout << p[j] << '\t';
+			}
+			top++;
+		}
+		else
+			while (top > 0)
+			{
+				j = st[top--];
+				cout << p[j] << '\t';
+			}
+	}
+}
+
+int main() {
+	int vexnum, arcnum;
+	cout << "输入顶点的数目和边的数目：" << endl;
+	cin >> vexnum >> arcnum;
+	char* p = new char[vexnum];			//创建一个动态数组来存储节点名称
+	int* path = new int[vexnum];		//创建一个动态数组来储存最短路径下节点前驱节点在p所指向数组的下标
+	int* d = new int[vexnum];			//存放开始节点到该节点最短的距离
+	int** q = (int**)new int* [vexnum];		//创建邻接矩阵
+	for (int i = 0; i < vexnum; i++)
+		q[i] = (int*)new int[vexnum];
+	for (int i = 0; i < vexnum; i++)		//将邻接矩阵每个元素赋为最大值
+		for (int j = 0; j < vexnum; j++)
+			q[i][j] = MaxInt;
+	CreateUDN(p, q, vexnum, arcnum);		//调用函数创建无向图
+	cout << "输入开始节点：" << endl;
+	char v;
+	cin >> v;
+	shortPath(p, q, path, vexnum, v, d);	//调用最短路径函数
+	print(p, q, path, d, vexnum, v);		//输出起点到其余各点的最短距离以及最短路径
+	cout << endl;
+}
